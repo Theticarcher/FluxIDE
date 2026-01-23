@@ -17,10 +17,12 @@ export function Editor({ filePath, content, onChange, onSave }: EditorProps) {
   const languageRegistered = useRef(false);
   const monacoInstance = useMonaco();
 
-  // Register Flux language once Monaco is available
+  // Register Flux language and theme once Monaco is available
   useEffect(() => {
     if (monacoInstance && !languageRegistered.current) {
       registerFluxLanguage(monacoInstance);
+      // Set the dark theme as default for all languages
+      monacoInstance.editor.setTheme("flux-dark");
       languageRegistered.current = true;
     }
   }, [monacoInstance]);

@@ -63,17 +63,71 @@ export const fluxDarkTheme: monaco.editor.IStandaloneThemeData = {
     { token: "constant.color.css", foreground: "ce9178" },
   ],
   colors: {
+    // Editor background and foreground
     "editor.background": "#1e1e1e",
     "editor.foreground": "#d4d4d4",
+
+    // Line numbers
     "editorLineNumber.foreground": "#858585",
     "editorLineNumber.activeForeground": "#c6c6c6",
+
+    // Cursor
     "editorCursor.foreground": "#aeafad",
+
+    // Selection
     "editor.selectionBackground": "#264f78",
     "editor.inactiveSelectionBackground": "#3a3d41",
+    "editor.selectionHighlightBackground": "#add6ff26",
+
+    // Line highlight
     "editor.lineHighlightBackground": "#2a2d2e",
+    "editor.lineHighlightBorder": "#282828",
+
+    // Indent guides
     "editorIndentGuide.background1": "#404040",
     "editorIndentGuide.activeBackground1": "#707070",
+
+    // Whitespace
     "editorWhitespace.foreground": "#3b3b3b",
+
+    // Bracket matching
+    "editorBracketMatch.background": "#0064001a",
+    "editorBracketMatch.border": "#888888",
+
+    // Find match
+    "editor.findMatchBackground": "#515c6a",
+    "editor.findMatchHighlightBackground": "#ea5c0055",
+
+    // Gutter
+    "editorGutter.background": "#1e1e1e",
+
+    // Scrollbar
+    "scrollbar.shadow": "#000000",
+    "scrollbarSlider.background": "#79797966",
+    "scrollbarSlider.hoverBackground": "#646464b3",
+    "scrollbarSlider.activeBackground": "#bfbfbf66",
+
+    // Minimap
+    "minimap.background": "#1e1e1e",
+    "minimap.selectionHighlight": "#264f78",
+
+    // Widget (autocomplete, hover)
+    "editorWidget.background": "#252526",
+    "editorWidget.border": "#454545",
+    "editorSuggestWidget.background": "#252526",
+    "editorSuggestWidget.border": "#454545",
+    "editorSuggestWidget.foreground": "#d4d4d4",
+    "editorSuggestWidget.selectedBackground": "#094771",
+    "editorSuggestWidget.highlightForeground": "#18a3ff",
+
+    // Hover widget
+    "editorHoverWidget.background": "#252526",
+    "editorHoverWidget.border": "#454545",
+
+    // Error/Warning
+    "editorError.foreground": "#f14c4c",
+    "editorWarning.foreground": "#cca700",
+    "editorInfo.foreground": "#3794ff",
   },
 };
 
