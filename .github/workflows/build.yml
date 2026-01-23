@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -75,11 +78,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'FluxIDE v__VERSION__'
-          releaseBody: 'See the assets for download links.'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'FluxIDE ${{ github.ref_name }}'
+          releaseBody: |
+            ## Downloads
+
+            | Platform | Download |
+            |----------|----------|
+            | Windows | `.exe` or `.msi` |
+            | macOS | `.dmg` |
+            | Linux | `.deb`, `.rpm`, or `.AppImage` |
           releaseDraft: true
           prerelease: false
+          includeUpdaterJson: false
           args: --target ${{ matrix.target }}
 
       - name: Upload artifacts
