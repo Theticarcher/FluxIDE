@@ -1,0 +1,3 @@
+[submodule "flux-compiler"]
+	path = flux-compiler
+	url = https://github.com/Theticarcher/Flux.git
