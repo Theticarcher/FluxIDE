@@ -1,0 +1,6 @@
+# This file ensures the images directory is tracked by git.
+# Add screenshots here:
+# - screenshot.png - Main IDE screenshot for README
+# - editor.png - Editor features screenshot
+# - terminal.png - Terminal screenshot
+# - preview.png - Preview panel screenshot

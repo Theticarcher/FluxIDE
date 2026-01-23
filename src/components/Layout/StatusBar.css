@@ -1,0 +1,47 @@
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--status-bar-height);
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.status-bar-left,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: var(--status-bar-height);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.status-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.status-item.branch {
+  gap: 6px;
+}
+
+.status-item.error {
+  color: var(--error-color);
+}
+
+.status-item.success svg {
+  color: var(--success-color);
+}
+
+.status-item.notifications {
+  padding: 0 6px;
+}

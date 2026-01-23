@@ -1,0 +1,198 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main-panel-group {
+  flex: 1;
+}
+
+.sidebar-panel {
+  min-width: 170px;
+}
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-content-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.code-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.preview-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Resize handles */
+.resize-handle-horizontal {
+  width: 4px;
+  background-color: transparent;
+  cursor: col-resize;
+  transition: background-color 0.15s ease;
+}
+
+.resize-handle-horizontal:hover,
+.resize-handle-horizontal:active {
+  background-color: var(--accent-color);
+}
+
+.resize-handle-vertical {
+  height: 4px;
+  background-color: transparent;
+  cursor: row-resize;
+  transition: background-color 0.15s ease;
+}
+
+.resize-handle-vertical:hover,
+.resize-handle-vertical:active {
+  background-color: var(--accent-color);
+}
+
+/* Placeholder content */
+.placeholder-content {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.placeholder-content .muted {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* Welcome screen */
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.welcome-logo {
+  width: 80px;
+  height: 80px;
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 48px;
+  font-weight: bold;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.welcome-screen h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.welcome-screen p {
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.welcome-button {
+  padding: 10px 24px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border: none;
+}
+
+.welcome-button:not(.secondary) {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.welcome-button:not(.secondary):hover {
+  background-color: var(--accent-hover);
+}
+
+.welcome-button.secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.welcome-button.secondary:hover {
+  background-color: var(--bg-hover);
+}
+
+.welcome-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text-secondary);
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.shortcut kbd {
+  background-color: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.shortcut span {
+  color: var(--text-muted);
+}
+
+/* Panel placeholder */
+.panel-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Welcome button spacing */
+.welcome-screen .welcome-button {
+  margin-top: 24px;
+}
