@@ -42,10 +42,15 @@
     "longDescription": "FluxIDE is a standalone integrated development environment for the Flux programming language, featuring syntax highlighting, live preview, integrated terminal, and more.",
     "linux": {
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"],
+        "desktopTemplate": "resources/FluxIDE.desktop"
       },
       "rpm": {
-        "depends": ["webkit2gtk4.1", "gtk3"]
+        "depends": ["webkit2gtk4.1", "gtk3"],
+        "desktopTemplate": "resources/FluxIDE.desktop"
+      },
+      "appimage": {
+        "bundleMediaFramework": true
       }
     },
     "macOS": {

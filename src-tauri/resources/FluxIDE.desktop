@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=Development;
+Comment=IDE for the Flux programming language
+Exec=env WEBKIT_DISABLE_DMABUF_RENDERER=1 fluxide %U
+StartupWMClass=fluxide
+Icon=fluxide
+Name=FluxIDE
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/flux;

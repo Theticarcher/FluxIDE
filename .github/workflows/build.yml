@@ -181,6 +181,14 @@ jobs:
             - **Windows**: Download and run the `.exe` installer
             - **macOS**: Download the `.dmg`, open it, and drag FluxIDE to Applications
             - **Linux**: Install with `sudo dpkg -i fluxide_*.deb` or run the AppImage directly
+
+            ### Troubleshooting
+
+            **Linux (NVIDIA users)**: If you get an EGL error when running the AppImage, run it with:
+            ```bash
+            WEBKIT_DISABLE_DMABUF_RENDERER=1 ./FluxIDE_amd64.AppImage
+            ```
+            The .deb package should work without this workaround.
           files: |
             artifacts/**/*.deb
             artifacts/**/*.AppImage
