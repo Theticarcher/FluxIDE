@@ -20,6 +20,7 @@ pub fn run() {
             commands::file_system::delete_path,
             commands::file_system::rename_path,
             commands::compiler::compile_flux_file,
+            commands::compiler::compile_flux_content,
             commands::terminal::terminal_spawn,
             commands::terminal::terminal_write,
             commands::terminal::terminal_resize,

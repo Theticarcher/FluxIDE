@@ -2,10 +2,16 @@ import { useEffect, useRef, useCallback } from "react";
 import { Terminal as XTerm } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { WebLinksAddon } from "xterm-addon-web-links";
-import { useTerminal } from "../../hooks/useTerminal";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useTerminalStore } from "../../stores/terminal-store";
 import "xterm/css/xterm.css";
 import "./Terminal.css";
+
+interface TerminalOutput {
+  id: string;
+  data: number[];
+}
 
 interface TerminalProps {
   sessionId: string;
@@ -16,18 +22,22 @@ export function Terminal({ sessionId, isActive }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const { writeToTerminal, resizeTerminal, onTerminalOutput, onTerminalClosed } =
-    useTerminal();
+  const initializedRef = useRef(false);
+  const cleanedUpRef = useRef(false);
 
-  // Initialize the terminal
+  // Initialize the terminal - only once
   useEffect(() => {
-    if (!terminalRef.current || xtermRef.current) return;
+    if (!terminalRef.current || initializedRef.current) return;
+    initializedRef.current = true;
+    cleanedUpRef.current = false;
 
     const xterm = new XTerm({
       cursorBlink: true,
       cursorStyle: "block",
       fontSize: 13,
       fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
+      lineHeight: 1.1,
+      letterSpacing: 0,
       theme: {
         background: "#1e1e1e",
         foreground: "#cccccc",
@@ -63,66 +73,87 @@ export function Terminal({ sessionId, isActive }: TerminalProps) {
     xterm.loadAddon(webLinksAddon);
 
     xterm.open(terminalRef.current);
-    fitAddon.fit();
+
+    // Delay fit to ensure proper sizing
+    setTimeout(() => {
+      if (cleanedUpRef.current) return;
+      fitAddon.fit();
+      // Send initial resize to backend
+      invoke("terminal_resize", {
+        id: sessionId,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      }).catch(console.error);
+    }, 100);
 
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
 
-    // Handle user input
-    xterm.onData((data) => {
-      writeToTerminal(sessionId, data);
+    // Handle user input - send to PTY as raw bytes
+    const dataDisposable = xterm.onData((data) => {
+      if (cleanedUpRef.current) return;
+      // Convert string to byte array for proper handling of control characters
+      const bytes = Array.from(new TextEncoder().encode(data));
+      invoke("terminal_write", { id: sessionId, data: bytes }).catch(console.error);
     });
 
     // Resize the PTY when terminal resizes
-    xterm.onResize(({ cols, rows }) => {
-      resizeTerminal(sessionId, cols, rows);
+    const resizeDisposable = xterm.onResize(({ cols, rows }) => {
+      if (cleanedUpRef.current) return;
+      invoke("terminal_resize", { id: sessionId, cols, rows }).catch(console.error);
     });
 
-    // Initial resize
-    const { cols, rows } = xterm;
-    resizeTerminal(sessionId, cols, rows);
+    // Track listeners to ensure proper cleanup
+    let unlisten: UnlistenFn | null = null;
+    let unlistenClosed: UnlistenFn | null = null;
+
+    // Listen for output from the backend
+    const outputPromise = listen<TerminalOutput>("terminal-output", (event) => {
+      if (cleanedUpRef.current) return;
+      if (event.payload.id === sessionId && xtermRef.current) {
+        // Convert byte array back to Uint8Array for xterm
+        const bytes = new Uint8Array(event.payload.data);
+        xtermRef.current.write(bytes);
+      }
+    });
+
+    outputPromise.then((fn) => {
+      if (cleanedUpRef.current) {
+        // Component was unmounted before listener was set up, clean it immediately
+        fn();
+      } else {
+        unlisten = fn;
+      }
+    });
+
+    // Listen for terminal closed events
+    const closedPromise = listen<string>("terminal-closed", (event) => {
+      if (cleanedUpRef.current) return;
+      if (event.payload === sessionId) {
+        console.log("Terminal closed:", sessionId);
+      }
+    });
+
+    closedPromise.then((fn) => {
+      if (cleanedUpRef.current) {
+        fn();
+      } else {
+        unlistenClosed = fn;
+      }
+    });
 
     return () => {
+      cleanedUpRef.current = true;
+      initializedRef.current = false;
+      dataDisposable.dispose();
+      resizeDisposable.dispose();
+      if (unlisten) unlisten();
+      if (unlistenClosed) unlistenClosed();
       xterm.dispose();
       xtermRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [sessionId, writeToTerminal, resizeTerminal]);
-
-  // Listen for output from the backend
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-
-    onTerminalOutput((output) => {
-      if (output.id === sessionId && xtermRef.current) {
-        xtermRef.current.write(output.data);
-      }
-    }).then((fn) => {
-      unlisten = fn;
-    });
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [sessionId, onTerminalOutput]);
-
-  // Listen for terminal closed events
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-
-    onTerminalClosed((id) => {
-      if (id === sessionId) {
-        // Terminal was closed from backend
-        console.log("Terminal closed:", id);
-      }
-    }).then((fn) => {
-      unlisten = fn;
-    });
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [sessionId, onTerminalClosed]);
+  }, [sessionId]);
 
   // Handle resize when visibility changes or container size changes
   const handleResize = useCallback(() => {
@@ -181,11 +212,16 @@ interface TerminalTabsProps {
 
 export function TerminalTabs({ onNewTerminal }: TerminalTabsProps) {
   const { sessions, activeSessionId, setActiveSession } = useTerminalStore();
-  const { closeTerminal } = useTerminal();
+  const removeSession = useTerminalStore((state) => state.removeSession);
 
   const handleClose = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await closeTerminal(id);
+    try {
+      await invoke("terminal_close", { id });
+      removeSession(id);
+    } catch (error) {
+      console.error("Failed to close terminal:", error);
+    }
   };
 
   return (
@@ -224,20 +260,47 @@ interface TerminalContainerProps {
   cwd?: string;
 }
 
+interface TerminalInfo {
+  id: string;
+  shell: string;
+}
+
 export function TerminalContainer({ cwd }: TerminalContainerProps) {
-  const { sessions, activeSessionId } = useTerminalStore();
-  const { spawnTerminal } = useTerminal();
+  const { sessions, activeSessionId, addSession } = useTerminalStore();
+  const spawnedRef = useRef(false);
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
 
-  const handleNewTerminal = async () => {
-    await spawnTerminal(cwd);
-  };
+  const handleNewTerminal = useCallback(async () => {
+    try {
+      const info = await invoke<TerminalInfo>("terminal_spawn", {
+        shell: null,
+        cwd: cwd || null,
+      });
 
-  // Auto-spawn a terminal if there are none
-  useEffect(() => {
-    if (sessions.length === 0) {
-      spawnTerminal(cwd);
+      // Generate a name like "bash 1", "bash 2", etc.
+      const shellName = info.shell.split("/").pop() || "terminal";
+      const currentSessions = sessionsRef.current;
+      const count = currentSessions.filter((s) => s.shell === info.shell).length + 1;
+      const name = `${shellName} ${count}`;
+
+      addSession({
+        id: info.id,
+        name,
+        shell: info.shell,
+      });
+    } catch (error) {
+      console.error("Failed to spawn terminal:", error);
     }
-  }, []); // Only on mount
+  }, [cwd, addSession]);
+
+  // Auto-spawn a terminal if there are none - only once
+  useEffect(() => {
+    if (sessions.length === 0 && !spawnedRef.current) {
+      spawnedRef.current = true;
+      handleNewTerminal();
+    }
+  }, [sessions.length, handleNewTerminal]);
 
   return (
     <div className="terminal-container">

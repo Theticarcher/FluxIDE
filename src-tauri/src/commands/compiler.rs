@@ -136,3 +136,91 @@ fn read_compiled_files(file_path: &str, output_dir: &str) -> (Option<String>, Op
         std::fs::read_to_string(&css_path).ok(),
     )
 }
+
+/// Compile Flux code from content string (for live preview)
+#[tauri::command]
+pub async fn compile_flux_content(content: String, file_name: String) -> Result<CompileResult, String> {
+    use std::io::Write;
+
+    // Create a temporary file with the content
+    let temp_dir = std::env::temp_dir().join("fluxide-live");
+    std::fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+
+    let temp_file = temp_dir.join(&file_name);
+    let output_dir = temp_dir.join("output");
+    std::fs::create_dir_all(&output_dir).map_err(|e| e.to_string())?;
+
+    // Write content to temp file
+    let mut file = std::fs::File::create(&temp_file).map_err(|e| e.to_string())?;
+    file.write_all(content.as_bytes()).map_err(|e| e.to_string())?;
+    drop(file);
+
+    let temp_file_str = temp_file.to_string_lossy().to_string();
+    let output_dir_str = output_dir.to_string_lossy().to_string();
+
+    // Compile using existing function logic
+    if let Some(compiler_path) = get_bundled_compiler_path() {
+        let output = Command::new("npx")
+            .args(["tsx", compiler_path.to_str().unwrap(), "build", &temp_file_str, "-o", &output_dir_str])
+            .output();
+
+        if let Ok(output) = output {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let success = output.status.success();
+
+            let (html, js, css) = if success {
+                read_compiled_files(&temp_file_str, &output_dir_str)
+            } else {
+                (None, None, None)
+            };
+
+            return Ok(CompileResult {
+                success,
+                stdout,
+                stderr,
+                html,
+                js,
+                css,
+            });
+        }
+    }
+
+    // Fall back to system flux command
+    let output = Command::new("flux")
+        .args(["build", &temp_file_str, "-o", &output_dir_str])
+        .output();
+
+    match output {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            let success = output.status.success();
+
+            let (html, js, css) = if success {
+                read_compiled_files(&temp_file_str, &output_dir_str)
+            } else {
+                (None, None, None)
+            };
+
+            Ok(CompileResult {
+                success,
+                stdout,
+                stderr,
+                html,
+                js,
+                css,
+            })
+        }
+        Err(e) => {
+            Ok(CompileResult {
+                success: false,
+                stdout: String::new(),
+                stderr: format!("Failed to run flux compiler: {}", e),
+                html: None,
+                js: None,
+                css: None,
+            })
+        }
+    }
+}

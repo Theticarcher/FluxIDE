@@ -1,10 +1,21 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Panel as ResizablePanel,
   PanelGroup,
   PanelResizeHandle,
 } from "react-resizable-panels";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Layout, EyeOff } from "lucide-react";
 import {
   ActivityBar,
   Sidebar,
@@ -18,12 +29,30 @@ import { Editor, EditorTabs } from "./components/Editor";
 import { FileExplorer } from "./components/FileExplorer";
 import { Preview } from "./components/Preview";
 import { TerminalContainer } from "./components/Terminal";
+import { VisualEditor } from "./components/VisualEditor";
+import { ProblemsPanel } from "./components/ProblemsPanel";
+import { OutputPanel } from "./components/OutputPanel";
+import {
+  ElementsTab as DevToolsElementsTab,
+  ConsoleTab,
+  SourcesTab,
+  NetworkTab,
+  PerformanceTab,
+  MemoryTab,
+  ApplicationTab,
+  SecurityTab,
+  FluxScoreTab,
+  RecorderTab,
+} from "./components/DevTools/tabs";
 import { useEditorStore } from "./stores/editor-store";
 import { useFileStore } from "./stores/file-store";
+import { useVisualEditorStore, generateNodeId } from "./stores/visual-editor-store";
 import { useFileSystem } from "./hooks/useFileSystem";
 import { useCompiler } from "./hooks/useCompiler";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { ComponentDefinition, CanvasNode } from "./types/visual-editor";
 import "./App.css";
+import "./components/DevTools/DevTools.css";
 
 function App() {
   const [activeView, setActiveView] = useState<ActivityView>("explorer");
@@ -32,6 +61,34 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [showPreview] = useState(true);
   const [previewHtml, setPreviewHtml] = useState("");
+  const [compiledHtml, setCompiledHtml] = useState<string | null>(null);
+  const [compiledCss, setCompiledCss] = useState<string | null>(null);
+  const [compiledJs, setCompiledJs] = useState<string | null>(null);
+  const [activeDragItem, setActiveDragItem] = useState<ComponentDefinition | null>(null);
+
+  // Ref for preview iframe - shared between Preview and DevTools tabs
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Visual editor store
+  const {
+    isVisualPanelVisible,
+    setVisualPanelVisible,
+    addNode,
+    nodes,
+    moveNode,
+    selectedNodeId,
+    selectNode,
+    updateNodeStyles,
+  } = useVisualEditorStore();
+
+  // Configure drag sensors for app-level DnD
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
 
   // Editor store
   const {
@@ -52,13 +109,52 @@ function App() {
   const { rootPath, setRootPath, setFiles, setLoading } = useFileStore();
 
   // Compiler hook
-  const { compileFile, generatePreviewHtml, isCompiling } = useCompiler();
+  const { compileFile, compileContent, generatePreviewHtml, isCompiling, errors: compilerErrors, lastResult: compilerResult } = useCompiler();
 
   // Get the active file
   const activeFile = getActiveFile();
 
+  // Ref for debouncing live preview
+  const livePreviewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Check if active file is a Flux file
   const isFluxFile = activeFile?.name.endsWith(".flux");
+
+  // Compute all canvas nodes from visual editor store
+  // This includes ALL nodes so they can be selected/moved in the preview
+  const allCanvasNodes = useMemo(() => {
+    const result: { id: string; componentName: string; className: string; isPositioned: boolean; x: number; y: number }[] = [];
+
+    function collectAllNodes(nodeList: CanvasNode[]) {
+      for (const node of nodeList) {
+        // The className is now the full node.id in the code generator
+        const isPositioned = node.styles.position === 'absolute' && !!node.styles.left && !!node.styles.top;
+        result.push({
+          id: node.id,
+          componentName: node.componentName,
+          className: node.id, // Use full ID as class name
+          isPositioned: isPositioned,
+          x: isPositioned ? (parseFloat(node.styles.left) || 0) : 0,
+          y: isPositioned ? (parseFloat(node.styles.top) || 0) : 0,
+        });
+        if (node.children.length > 0) {
+          collectAllNodes(node.children);
+        }
+      }
+    }
+
+    collectAllNodes(nodes);
+    return result;
+  }, [nodes]);
+
+  // Handle moving a positioned node in the preview
+  const handleMoveNode = useCallback((nodeId: string, x: number, y: number) => {
+    updateNodeStyles(nodeId, {
+      position: 'absolute',
+      left: `${x}px`,
+      top: `${y}px`,
+    });
+  }, [updateNodeStyles]);
 
   const handleViewChange = (view: ActivityView) => {
     if (view === activeView) {
@@ -100,8 +196,9 @@ function App() {
 
   // Handle save
   const handleSave = useCallback(async () => {
-    if (!activeFile || !activeFile.isDirty) return;
+    if (!activeFile) return;
 
+    // Always try to save, even if not marked dirty (visual editor might not mark it correctly)
     try {
       await writeFile(activeFile.path, activeFile.content);
       markSaved(activeFile.id);
@@ -121,6 +218,59 @@ function App() {
       handleCompile();
     }
   }, [activeFileId]); // Only on file change, not on every render
+
+  // Live preview: compile content on change (debounced)
+  useEffect(() => {
+    if (!isFluxFile || !activeFile || !activeFile.content.trim()) return;
+
+    // Clear any pending timeout
+    if (livePreviewTimeoutRef.current) {
+      clearTimeout(livePreviewTimeoutRef.current);
+    }
+
+    // Debounce the compilation by 500ms for smoother editing
+    livePreviewTimeoutRef.current = setTimeout(async () => {
+      try {
+        const result = await compileContent(activeFile.content, activeFile.name);
+        const html = generatePreviewHtml(result);
+        // Only update if we got valid HTML back
+        if (html) {
+          setPreviewHtml(html);
+        }
+        // Store individual compiled parts for the Elements panel
+        setCompiledHtml(result.html);
+        setCompiledCss(result.css);
+        setCompiledJs(result.js);
+      } catch (error) {
+        console.error("Live preview compilation error:", error);
+        // On error, show error in preview instead of going blank
+        setPreviewHtml(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: system-ui; padding: 20px; background: #1e1e1e; }
+                .error { color: #f14c4c; background: #2d2020; padding: 16px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+              </style>
+            </head>
+            <body>
+              <div class="error">Live preview error: ${String(error)}</div>
+            </body>
+          </html>
+        `);
+        // Clear compiled parts on error
+        setCompiledHtml(null);
+        setCompiledCss(null);
+        setCompiledJs(null);
+      }
+    }, 500);
+
+    return () => {
+      if (livePreviewTimeoutRef.current) {
+        clearTimeout(livePreviewTimeoutRef.current);
+      }
+    };
+  }, [activeFile?.content, isFluxFile, compileContent, generatePreviewHtml]);
 
   // Open folder handler
   const handleOpenFolder = useCallback(async () => {
@@ -212,6 +362,85 @@ function App() {
 
   useKeyboardShortcuts(shortcuts);
 
+  // Handle drag start - track what's being dragged
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const activeData = event.active.data.current as { type: string; componentDef?: ComponentDefinition };
+    if (activeData?.type === 'palette' && activeData.componentDef) {
+      setActiveDragItem(activeData.componentDef);
+    }
+  }, []);
+
+  // Handle drag end - create node with position if dropped on preview
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setActiveDragItem(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeData = active.data.current as { type: string; componentDef?: ComponentDefinition; node?: CanvasNode };
+    const overData = over.data.current as {
+      type: string;
+      parentId?: string | null;
+      depth?: number;
+      position?: { x: number; y: number };
+      getPosition?: () => { x: number; y: number } | null;
+    };
+
+    // Dragging from palette
+    if (activeData?.type === 'palette' && activeData.componentDef) {
+      const newNode: CanvasNode = {
+        id: generateNodeId(),
+        componentName: activeData.componentDef.name,
+        props: {},
+        styles: {},
+        events: {},
+        children: [],
+        parentId: null,
+      };
+
+      // Set default props
+      activeData.componentDef.props.forEach(prop => {
+        if (prop.defaultValue !== undefined) {
+          newNode.props[prop.name] = prop.defaultValue;
+        }
+      });
+
+      // If dropped on preview with position, add absolute positioning and add to ROOT only
+      // Use getPosition() if available (for real-time position), fall back to static position
+      const dropPosition = overData?.getPosition?.() ?? overData?.position;
+      if (overData?.type === 'preview' && dropPosition) {
+        newNode.styles = {
+          position: 'absolute',
+          left: `${dropPosition.x}px`,
+          top: `${dropPosition.y}px`,
+        };
+        // Always add to root level when dropping on preview - no nesting
+        addNode(newNode, null, nodes.length);
+      } else if (overData?.type === 'dropzone') {
+        // Dropped on a specific dropzone in the visual canvas - nest inside parent
+        const parentId = overData.parentId ?? null;
+        addNode(newNode, parentId, 0);
+      } else if (overData?.type === 'root' || overData?.type === 'canvas') {
+        // Dropped on root canvas - add to root level
+        addNode(newNode, null, nodes.length);
+      }
+    }
+
+    // Dragging within canvas - reorder
+    if (activeData?.type === 'canvas' && activeData.node) {
+      const nodeId = active.id as string;
+      if (overData?.type === 'dropzone') {
+        const newParentId = overData.parentId ?? null;
+        moveNode(nodeId, newParentId, 0);
+      } else if (over.id !== active.id) {
+        const targetNode = nodes.find(n => n.id === over.id);
+        if (targetNode) {
+          const targetParentId = targetNode.parentId;
+          moveNode(nodeId, targetParentId, 1);
+        }
+      }
+    }
+  }, [addNode, moveNode, nodes]);
+
   // Render sidebar content based on active view
   const renderSidebarContent = () => {
     switch (activeView) {
@@ -244,6 +473,12 @@ function App() {
   };
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
     <div className="app-container">
       <div className="app-main">
         <ActivityBar activeView={activeView} onViewChange={handleViewChange} />
@@ -269,14 +504,26 @@ function App() {
             <PanelGroup direction="vertical">
               <ResizablePanel minSize={20} className="editor-content-panel">
                 <PanelGroup direction="horizontal">
-                  <ResizablePanel minSize={30} className="code-panel">
+                  <ResizablePanel minSize={isFluxFile && isVisualPanelVisible ? 25 : 30} className="code-panel">
                     <EditorArea>
-                      <EditorTabs
-                        files={openFiles}
-                        activeFileId={activeFileId}
-                        onSelectTab={setActiveFile}
-                        onCloseTab={closeFile}
-                      />
+                      <div className="editor-toolbar">
+                        <EditorTabs
+                          files={openFiles}
+                          activeFileId={activeFileId}
+                          onSelectTab={setActiveFile}
+                          onCloseTab={closeFile}
+                        />
+                        {isFluxFile && (
+                          <button
+                            className="visual-toggle-btn"
+                            onClick={() => setVisualPanelVisible(!isVisualPanelVisible)}
+                            title={isVisualPanelVisible ? "Hide Visual Editor" : "Show Visual Editor"}
+                          >
+                            {isVisualPanelVisible ? <EyeOff size={14} /> : <Layout size={14} />}
+                            <span>{isVisualPanelVisible ? "Hide Visual" : "Show Visual"}</span>
+                          </button>
+                        )}
+                      </div>
                       {activeFile ? (
                         <Editor
                           filePath={activeFile.path}
@@ -318,19 +565,45 @@ function App() {
                     </EditorArea>
                   </ResizablePanel>
 
-                  {showPreview && isFluxFile && (
+                  {/* Visual Editor Panel - shown for .flux files */}
+                  {isFluxFile && isVisualPanelVisible && activeFile && (
                     <>
                       <PanelResizeHandle className="resize-handle-horizontal" />
                       <ResizablePanel
                         defaultSize={40}
-                        minSize={20}
+                        minSize={25}
                         maxSize={60}
+                        className="visual-editor-panel"
+                      >
+                        <VisualEditor
+                          code={activeFile.content}
+                          onCodeChange={handleContentChange}
+                          fileName={activeFile.name}
+                        />
+                      </ResizablePanel>
+                    </>
+                  )}
+
+                  {showPreview && isFluxFile && (
+                    <>
+                      <PanelResizeHandle className="resize-handle-horizontal" />
+                      <ResizablePanel
+                        defaultSize={isVisualPanelVisible ? 25 : 40}
+                        minSize={15}
+                        maxSize={50}
                         className="preview-panel"
                       >
                         <Preview
                           html={previewHtml}
                           isCompiling={isCompiling}
                           onRefresh={handleCompile}
+                          isDragging={activeDragItem !== null}
+                          draggedComponent={activeDragItem}
+                          canvasNodes={allCanvasNodes}
+                          selectedNodeId={selectedNodeId}
+                          onSelectNode={selectNode}
+                          onMoveNode={handleMoveNode}
+                          iframeRef={previewIframeRef}
                         />
                       </ResizablePanel>
                     </>
@@ -352,18 +625,66 @@ function App() {
                   isCollapsed={isPanelCollapsed}
                   onToggleCollapse={() => setIsPanelCollapsed(!isPanelCollapsed)}
                 >
-                  {activePanel === "terminal" && !isPanelCollapsed && (
+                  {/* Always render terminal but hide when not active to preserve PTY connections */}
+                  <div style={{
+                    display: activePanel === "terminal" && !isPanelCollapsed ? "flex" : "none",
+                    flexDirection: "column",
+                    height: "100%",
+                    width: "100%"
+                  }}>
                     <TerminalContainer cwd={rootPath || undefined} />
-                  )}
+                  </div>
                   {activePanel === "problems" && !isPanelCollapsed && (
-                    <div className="panel-placeholder">
-                      <p>No problems detected</p>
-                    </div>
+                    <ProblemsPanel
+                      problems={compilerErrors.map(e => ({
+                        ...e,
+                        severity: "error" as const,
+                        file: activeFile?.name,
+                      }))}
+                    />
                   )}
                   {activePanel === "output" && !isPanelCollapsed && (
-                    <div className="panel-placeholder">
-                      <p>Output will appear here</p>
-                    </div>
+                    <OutputPanel
+                      stdout={compilerResult?.stdout || null}
+                      stderr={compilerResult?.stderr || null}
+                      success={compilerResult?.success ?? null}
+                      fileName={activeFile?.name}
+                    />
+                  )}
+                  {activePanel === "elements" && !isPanelCollapsed && (
+                    <DevToolsElementsTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "console" && !isPanelCollapsed && (
+                    <ConsoleTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "sources" && !isPanelCollapsed && (
+                    <SourcesTab
+                      iframeRef={previewIframeRef}
+                      compiledHtml={compiledHtml}
+                      compiledCss={compiledCss}
+                      compiledJs={compiledJs}
+                    />
+                  )}
+                  {activePanel === "network" && !isPanelCollapsed && (
+                    <NetworkTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "performance" && !isPanelCollapsed && (
+                    <PerformanceTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "memory" && !isPanelCollapsed && (
+                    <MemoryTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "application" && !isPanelCollapsed && (
+                    <ApplicationTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "security" && !isPanelCollapsed && (
+                    <SecurityTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "fluxscore" && !isPanelCollapsed && (
+                    <FluxScoreTab iframeRef={previewIframeRef} />
+                  )}
+                  {activePanel === "recorder" && !isPanelCollapsed && (
+                    <RecorderTab iframeRef={previewIframeRef} />
                   )}
                 </Panel>
               </ResizablePanel>
@@ -381,6 +702,14 @@ function App() {
         status={isCompiling ? "compiling" : "ready"}
       />
     </div>
+    <DragOverlay>
+      {activeDragItem && (
+        <div className="drag-overlay-component">
+          {activeDragItem.name}
+        </div>
+      )}
+    </DragOverlay>
+    </DndContext>
   );
 }
 

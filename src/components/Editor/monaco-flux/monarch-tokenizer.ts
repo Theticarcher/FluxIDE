@@ -235,7 +235,8 @@ export const fluxMonarchTokenizer: monaco.languages.IMonarchLanguage = {
     // JSX HTML tag (lowercase)
     jsxHtmlTag: [
       [/\s+/, "white"],
-      [/\/?>/, { token: "delimiter.tag", next: "@pop" }],
+      [/\/>/, { token: "delimiter.tag", next: "@pop" }],
+      [/>/, { token: "delimiter.tag", switchTo: "@jsxText" }],
       [/([a-z][a-zA-Z0-9\-]*)(\s*)(=)/, ["attribute.name.html", "white", "delimiter"]],
       [/([a-z][a-zA-Z0-9\-]*)/, "attribute.name.html"],
       [/"/, "string.attribute", "@jsxAttributeString"],
@@ -246,12 +247,30 @@ export const fluxMonarchTokenizer: monaco.languages.IMonarchLanguage = {
     // JSX Component tag (PascalCase)
     jsxComponentTag: [
       [/\s+/, "white"],
-      [/\/?>/, { token: "delimiter.tag", next: "@pop" }],
+      [/\/>/, { token: "delimiter.tag", next: "@pop" }],
+      [/>/, { token: "delimiter.tag", switchTo: "@jsxText" }],
       [/([a-z][a-zA-Z0-9]*)(\s*)(=)/, ["attribute.name", "white", "delimiter"]],
       [/([a-z][a-zA-Z0-9]*)/, "attribute.name"],
       [/"/, "string.attribute", "@jsxAttributeString"],
       [/\{/, { token: "delimiter.bracket", next: "@jsxExpression" }],
       [/[A-Z][a-zA-Z0-9]*/, "type.identifier.component"],
+    ],
+
+    // JSX text content between tags
+    jsxText: [
+      // Closing tag - go to close tag handler then pop
+      [/<\//, { token: "delimiter.tag", switchTo: "@jsxCloseTag" }],
+      // Nested opening tags
+      [/<(?=[A-Z])/, { token: "delimiter.tag", next: "@jsxComponentTag" }],
+      [/<(?=[a-z])/, { token: "delimiter.tag", next: "@jsxHtmlTag" }],
+      // JSX control flow
+      [/\{#(if|for)\b/, { token: "keyword.control.flux", next: "@jsxControlFlowCondition" }],
+      [/\{:(else)\}/, "keyword.control.flux"],
+      [/\{\/(if|for)\}/, "keyword.control.flux"],
+      // Expression in JSX
+      [/\{/, { token: "delimiter.bracket", next: "@jsxExpression" }],
+      // Text content - anything that's not a tag or expression start
+      [/[^<{]+/, ""],
     ],
 
     // JSX close tag
@@ -274,28 +293,34 @@ export const fluxMonarchTokenizer: monaco.languages.IMonarchLanguage = {
       { include: "@root" },
     ],
 
-    // Style block (CSS)
+    // Style block (CSS) - outer level, only contains CSS rules/selectors
     styleBlock: [
-      [/\}(?=\s*\n\s*<|\s*\n\s*component|\s*\n\s*page|\s*$)/, { token: "delimiter.bracket", next: "@pop" }],
-      [/\{/, { token: "delimiter.bracket", next: "@cssNestedBlock" }],
+      [/\}/, { token: "delimiter.bracket", next: "@pop" }],
+      [/\{/, { token: "delimiter.bracket", next: "@cssRuleBlock" }],
       [/\/\*/, "comment.css", "@cssComment"],
-      [/\.[a-zA-Z][a-zA-Z0-9_\-]*/, "attribute.name.class.css"],
-      [/#[a-zA-Z][a-zA-Z0-9_\-]*/, "attribute.name.id.css"],
-      [/:[a-zA-Z][a-zA-Z0-9\-]*/, "attribute.name.pseudo.css"],
-      [/::[a-zA-Z][a-zA-Z0-9\-]*/, "attribute.name.pseudo-element.css"],
-      [/[a-z][a-z0-9]*(?=\s*[{,:.#\[])/, "tag.css"],
-      [/([a-z\-]+)(\s*)(:)/, ["attribute.name.css", "white", "delimiter.css"]],
-      [/-?[0-9]+(\.[0-9]+)?(px|em|rem|%|vh|vw|s|ms|deg)?/, "number.css"],
-      [/#[0-9a-fA-F]{3,8}/, "constant.color.css"],
-      [/"([^"\\]|\\.)*"/, "string.css"],
-      [/'([^'\\]|\\.)*'/, "string.css"],
-      [/[;,]/, "delimiter.css"],
+      // CSS selectors - class (including names with numbers like .node-17693864), id, pseudo, element
+      [/\.[a-zA-Z_][a-zA-Z0-9_\-]*/, "attribute.name.class.css"],
+      [/\.-?[a-zA-Z_][\w\-]*/, "attribute.name.class.css"],
+      [/#[a-zA-Z_][\w\-]*/, "attribute.name.id.css"],
+      [/::[a-zA-Z][\w\-]*/, "attribute.name.pseudo-element.css"],
+      [/:[a-zA-Z][\w\-]*/, "attribute.name.pseudo.css"],
+      [/[a-z][\w\-]*/, "tag.css"],
+      [/[,>+~]/, "delimiter.css"],
       [/\s+/, "white"],
     ],
 
-    cssNestedBlock: [
+    // CSS rule block - contains property declarations
+    cssRuleBlock: [
       [/\}/, { token: "delimiter.bracket", next: "@pop" }],
-      { include: "@styleBlock" },
+      [/\/\*/, "comment.css", "@cssComment"],
+      [/([a-zA-Z\-]+)(\s*)(:)/, ["attribute.name.css", "white", "delimiter.css"]],
+      [/-?[0-9]+(\.[0-9]+)?(px|em|rem|%|vh|vw|s|ms|deg|fr)?/, "number.css"],
+      [/#[0-9a-fA-F]{3,8}/, "constant.color.css"],
+      [/"([^"\\]|\\.)*"/, "string.css"],
+      [/'([^'\\]|\\.)*'/, "string.css"],
+      [/[;]/, "delimiter.css"],
+      [/[a-zA-Z][a-zA-Z0-9\-]*/, "attribute.value.css"],
+      [/\s+/, "white"],
     ],
 
     cssComment: [

@@ -60,6 +60,44 @@ export function useCompiler() {
   }, []);
 
   /**
+   * Compile Flux content directly (for live preview)
+   */
+  const compileContent = useCallback(async (content: string, fileName: string): Promise<CompileResult> => {
+    setIsCompiling(true);
+    setErrors([]);
+
+    try {
+      const result: CompileResult = await invoke("compile_flux_content", {
+        content,
+        fileName,
+      });
+
+      setLastResult(result);
+
+      // Parse errors from stderr if compilation failed
+      if (!result.success && result.stderr) {
+        const parsedErrors = parseCompilerErrors(result.stderr);
+        setErrors(parsedErrors);
+      }
+
+      return result;
+    } catch (error) {
+      const errorResult: CompileResult = {
+        success: false,
+        stdout: "",
+        stderr: String(error),
+        html: null,
+        js: null,
+        css: null,
+      };
+      setLastResult(errorResult);
+      return errorResult;
+    } finally {
+      setIsCompiling(false);
+    }
+  }, []);
+
+  /**
    * Generate preview HTML from compile result
    */
   const generatePreviewHtml = useCallback((result: CompileResult): string => {
@@ -100,6 +138,9 @@ export function useCompiler() {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
+            /* Reset default body margins for accurate positioning */
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 0; }
             ${result.css || ""}
           </style>
         </head>
@@ -115,6 +156,7 @@ export function useCompiler() {
 
   return {
     compileFile,
+    compileContent,
     generatePreviewHtml,
     isCompiling,
     lastResult,

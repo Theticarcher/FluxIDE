@@ -1,0 +1,27 @@
+.visual-editor {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-primary, #1e1e1e);
+}
+
+/* Drag overlay styles */
+.dnd-drag-overlay {
+  opacity: 0.9;
+  cursor: grabbing;
+}
+
+/* Animation for dropping */
+@keyframes drop-highlight {
+  0% {
+    box-shadow: 0 0 0 2px var(--accent-color, #007acc);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.node-dropped {
+  animation: drop-highlight 0.3s ease-out;
+}

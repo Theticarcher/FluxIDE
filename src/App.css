@@ -46,6 +46,50 @@
   min-height: 0;
 }
 
+.visual-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Editor toolbar with tabs and toggle button */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-toolbar > :first-child {
+  flex: 1;
+}
+
+.visual-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin-right: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.visual-toggle-btn:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+.visual-toggle-btn:active {
+  transform: scale(0.98);
+}
+
 /* Resize handles */
 .resize-handle-horizontal {
   width: 4px;
@@ -195,4 +239,16 @@
 /* Welcome button spacing */
 .welcome-screen .welcome-button {
   margin-top: 24px;
+}
+
+/* Drag overlay for components */
+.drag-overlay-component {
+  padding: 8px 16px;
+  background: var(--accent-color);
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
 }

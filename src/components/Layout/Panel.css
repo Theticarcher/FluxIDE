@@ -1,6 +1,7 @@
 .panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
   background-color: var(--bg-primary);
   border-top: 1px solid var(--border-color);
 }
@@ -14,14 +15,37 @@
   justify-content: space-between;
   align-items: center;
   height: 35px;
+  flex-shrink: 0;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   padding: 0 10px 0 0;
 }
 
+.panel-tabs-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
+}
+
+.panel-tabs-wrapper::-webkit-scrollbar {
+  height: 4px;
+}
+
+.panel-tabs-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-tabs-wrapper::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
+
 .panel-tabs {
   display: flex;
   height: 100%;
+  white-space: nowrap;
 }
 
 .panel-tab {

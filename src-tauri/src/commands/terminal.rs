@@ -12,8 +12,7 @@ use uuid::Uuid;
 /// Represents a terminal session
 struct TerminalSession {
     writer: Box<dyn Write + Send>,
-    // We keep the pair alive to maintain the PTY
-    _pair: portable_pty::PtyPair,
+    master: Box<dyn portable_pty::MasterPty + Send>,
 }
 
 /// Global state for terminal sessions
@@ -38,7 +37,7 @@ pub struct TerminalInfo {
 #[derive(Debug, Clone, Serialize)]
 pub struct TerminalOutput {
     pub id: String,
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
 /// Spawn a new terminal session
@@ -70,12 +69,35 @@ pub async fn terminal_spawn(
     let mut cmd = CommandBuilder::new(&shell_path);
 
     // Set working directory if provided
-    if let Some(dir) = cwd {
+    if let Some(ref dir) = cwd {
         cmd.cwd(dir);
     }
 
+    // Set environment variables for proper terminal behavior
+    cmd.env("TERM", "xterm-256color");
+    cmd.env("COLORTERM", "truecolor");
+
+    // Preserve important environment variables
+    if let Ok(lang) = std::env::var("LANG") {
+        cmd.env("LANG", lang);
+    } else {
+        cmd.env("LANG", "en_US.UTF-8");
+    }
+
+    if let Ok(path) = std::env::var("PATH") {
+        cmd.env("PATH", path);
+    }
+
+    if let Ok(home) = std::env::var("HOME") {
+        cmd.env("HOME", home);
+    }
+
+    if let Ok(user) = std::env::var("USER") {
+        cmd.env("USER", user);
+    }
+
     // Spawn the shell
-    let _child = pair
+    let mut child = pair
         .slave
         .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn shell: {}", e))?;
@@ -83,7 +105,7 @@ pub async fn terminal_spawn(
     // Generate a unique ID for this terminal
     let terminal_id = Uuid::new_v4().to_string();
 
-    // Get reader and writer
+    // Get reader and writer from master
     let mut reader = pair
         .master
         .try_clone_reader()
@@ -94,10 +116,10 @@ pub async fn terminal_spawn(
         .take_writer()
         .map_err(|e| format!("Failed to get writer: {}", e))?;
 
-    // Create the session
+    // Create the session - store the master to keep PTY alive and for resize
     let session = TerminalSession {
         writer,
-        _pair: pair,
+        master: pair.master,
     };
 
     // Store the session
@@ -106,12 +128,14 @@ pub async fn terminal_spawn(
         sessions.insert(terminal_id.clone(), session);
     }
 
-    // Spawn a thread to read output and emit events
+    // Clone for the reader thread
     let terminal_id_clone = terminal_id.clone();
     let app_clone = app.clone();
+    let sessions_clone = state.sessions.clone();
 
+    // Spawn a thread to read output and emit events
     thread::spawn(move || {
-        let mut buf = [0u8; 8192];
+        let mut buf = [0u8; 4096];
         loop {
             match reader.read(&mut buf) {
                 Ok(0) => {
@@ -120,8 +144,8 @@ pub async fn terminal_spawn(
                     break;
                 }
                 Ok(n) => {
-                    // Convert to string (lossy for invalid UTF-8)
-                    let data = String::from_utf8_lossy(&buf[..n]).to_string();
+                    // Send raw bytes to preserve all control sequences
+                    let data = buf[..n].to_vec();
                     let output = TerminalOutput {
                         id: terminal_id_clone.clone(),
                         data,
@@ -130,10 +154,18 @@ pub async fn terminal_spawn(
                 }
                 Err(e) => {
                     eprintln!("Terminal read error: {}", e);
+                    let _ = app_clone.emit("terminal-closed", &terminal_id_clone);
                     break;
                 }
             }
         }
+
+        // Clean up session when reader exits
+        let mut sessions = sessions_clone.lock();
+        sessions.remove(&terminal_id_clone);
+
+        // Try to wait for child process
+        let _ = child.wait();
     });
 
     Ok(TerminalInfo {
@@ -147,14 +179,14 @@ pub async fn terminal_spawn(
 pub async fn terminal_write(
     state: State<'_, TerminalState>,
     id: String,
-    data: String,
+    data: Vec<u8>,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock();
 
     if let Some(session) = sessions.get_mut(&id) {
         session
             .writer
-            .write_all(data.as_bytes())
+            .write_all(&data)
             .map_err(|e| format!("Failed to write to terminal: {}", e))?;
         session
             .writer
@@ -178,7 +210,6 @@ pub async fn terminal_resize(
 
     if let Some(session) = sessions.get(&id) {
         session
-            ._pair
             .master
             .resize(PtySize {
                 rows,

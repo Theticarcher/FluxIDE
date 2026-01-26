@@ -1,0 +1,10 @@
+export { ElementsTab } from "./ElementsTab";
+export { ConsoleTab } from "./ConsoleTab";
+export { SourcesTab } from "./SourcesTab";
+export { NetworkTab } from "./NetworkTab";
+export { PerformanceTab } from "./PerformanceTab";
+export { MemoryTab } from "./MemoryTab";
+export { ApplicationTab } from "./ApplicationTab";
+export { SecurityTab } from "./SecurityTab";
+export { FluxScoreTab } from "./FluxScoreTab";
+export { RecorderTab } from "./RecorderTab";
