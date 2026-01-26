@@ -95,7 +95,7 @@ export function FileTree({
 
     const { parentPath, type } = newItemState;
     const newPath = `${parentPath}/${name}`;
-    const extension = name.includes(".") ? name.split(".").pop() : undefined;
+    const extension = name.includes(".") ? (name.split(".").pop() ?? null) : null;
 
     try {
       if (type === "file") {
@@ -109,7 +109,7 @@ export function FileTree({
         path: newPath,
         is_dir: type === "folder",
         is_file: type === "file",
-        extension: type === "file" ? extension : undefined,
+        extension: type === "file" ? extension : null,
         isExpanded: false,
         isLoading: false,
       };

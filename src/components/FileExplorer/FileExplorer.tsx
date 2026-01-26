@@ -116,7 +116,7 @@ export function FileExplorer({ onFileOpen }: FileExplorerProps) {
 
     const name = newItemName.trim();
     const newPath = `${rootPath}/${name}`;
-    const extension = name.includes(".") ? name.split(".").pop() : undefined;
+    const extension = name.includes(".") ? (name.split(".").pop() ?? null) : null;
 
     try {
       if (isCreatingFile) {
@@ -138,7 +138,7 @@ export function FileExplorer({ onFileOpen }: FileExplorerProps) {
           path: newPath,
           is_dir: true,
           is_file: false,
-          extension: undefined,
+          extension: null,
           isExpanded: false,
           isLoading: false,
         };
