@@ -2,7 +2,7 @@
 
 A standalone integrated development environment for the [Flux programming language](https://github.com/theticarcher38/Flux).
 
-![FluxIDE Screenshot](docs/images/screenshot.png)
+![FluxIDE Screenshot](docs/images/FluxIdeScreenshot.png)
 
 ## Features
 
