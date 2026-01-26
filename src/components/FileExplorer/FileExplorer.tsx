@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { FolderOpen } from "lucide-react";
+import { useCallback, useState } from "react";
+import { FolderOpen, FilePlus, FolderPlus, RefreshCw } from "lucide-react";
 import { useFileStore } from "../../stores/file-store";
 import { useFileSystem } from "../../hooks/useFileSystem";
 import { FileTree } from "./FileTree";
@@ -20,9 +20,13 @@ export function FileExplorer({ onFileOpen }: FileExplorerProps) {
     setLoading,
     toggleDirectory,
     updateDirectoryChildren,
+    addNode,
   } = useFileStore();
 
-  const { readDirectory, readFile, openFolderDialog } = useFileSystem();
+  const { readDirectory, readFile, openFolderDialog, createFile, createDirectory } = useFileSystem();
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
 
   // Handle opening a folder
   const handleOpenFolder = useCallback(async () => {
@@ -42,6 +46,20 @@ export function FileExplorer({ onFileOpen }: FileExplorerProps) {
       setLoading(false);
     }
   }, [openFolderDialog, readDirectory, setFiles, setLoading, setRootPath]);
+
+  // Handle refresh
+  const handleRefresh = useCallback(async () => {
+    if (!rootPath) return;
+    setLoading(true);
+    try {
+      const entries = await readDirectory(rootPath);
+      setFiles(entries);
+    } catch (error) {
+      console.error("Failed to refresh:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [rootPath, readDirectory, setFiles, setLoading]);
 
   // Handle directory expansion
   const handleToggleDirectory = useCallback(
@@ -74,6 +92,78 @@ export function FileExplorer({ onFileOpen }: FileExplorerProps) {
     [readFile, onFileOpen]
   );
 
+  // Handle new file creation from header
+  const handleNewFile = () => {
+    setIsCreatingFile(true);
+    setIsCreatingFolder(false);
+    setNewItemName("");
+  };
+
+  // Handle new folder creation from header
+  const handleNewFolder = () => {
+    setIsCreatingFolder(true);
+    setIsCreatingFile(false);
+    setNewItemName("");
+  };
+
+  // Handle creating the new item
+  const handleCreateItem = async () => {
+    if (!newItemName.trim() || !rootPath) {
+      setIsCreatingFile(false);
+      setIsCreatingFolder(false);
+      return;
+    }
+
+    const name = newItemName.trim();
+    const newPath = `${rootPath}/${name}`;
+    const extension = name.includes(".") ? name.split(".").pop() : undefined;
+
+    try {
+      if (isCreatingFile) {
+        await createFile(newPath);
+        const newNode = {
+          name,
+          path: newPath,
+          is_dir: false,
+          is_file: true,
+          extension,
+          isExpanded: false,
+          isLoading: false,
+        };
+        addNode(rootPath, newNode);
+      } else if (isCreatingFolder) {
+        await createDirectory(newPath);
+        const newNode = {
+          name,
+          path: newPath,
+          is_dir: true,
+          is_file: false,
+          extension: undefined,
+          isExpanded: false,
+          isLoading: false,
+        };
+        addNode(rootPath, newNode);
+      }
+    } catch (error) {
+      console.error("Failed to create item:", error);
+      alert(`Failed to create: ${error}`);
+    }
+
+    setIsCreatingFile(false);
+    setIsCreatingFolder(false);
+    setNewItemName("");
+  };
+
+  // Handle keyboard events for new item input
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleCreateItem();
+    } else if (e.key === "Escape") {
+      setIsCreatingFile(false);
+      setIsCreatingFolder(false);
+    }
+  };
+
   // No folder open state
   if (!rootPath) {
     return (
@@ -91,7 +181,47 @@ export function FileExplorer({ onFileOpen }: FileExplorerProps) {
     <div className="file-explorer">
       <div className="file-explorer-header">
         <span className="folder-name">{rootName}</span>
+        <div className="file-explorer-actions">
+          <button
+            className="file-explorer-action-btn"
+            onClick={handleNewFile}
+            title="New File"
+          >
+            <FilePlus size={14} />
+          </button>
+          <button
+            className="file-explorer-action-btn"
+            onClick={handleNewFolder}
+            title="New Folder"
+          >
+            <FolderPlus size={14} />
+          </button>
+          <button
+            className="file-explorer-action-btn"
+            onClick={handleRefresh}
+            title="Refresh"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
       </div>
+
+      {/* New item input at root level */}
+      {(isCreatingFile || isCreatingFolder) && (
+        <div className="file-explorer-new-item">
+          <input
+            type="text"
+            className="file-explorer-new-input"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleCreateItem}
+            placeholder={isCreatingFile ? "file name" : "folder name"}
+            autoFocus
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className="file-explorer-loading">Loading...</div>
       ) : (

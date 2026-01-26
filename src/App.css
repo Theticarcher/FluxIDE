@@ -68,22 +68,24 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   margin-right: 8px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-medium);
   color: var(--text-secondary);
   font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-normal);
   white-space: nowrap;
 }
 
 .visual-toggle-btn:hover {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
+  background: var(--gradient-primary);
+  border-color: transparent;
   color: white;
+  box-shadow: 0 0 15px var(--glow-color);
 }
 
 .visual-toggle-btn:active {
@@ -95,31 +97,64 @@
   width: 4px;
   background-color: transparent;
   cursor: col-resize;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--transition-fast);
+  position: relative;
+}
+
+.resize-handle-horizontal::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background: var(--border-color);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.resize-handle-horizontal:hover::after,
+.resize-handle-horizontal:active::after {
+  opacity: 1;
+  background: var(--accent-primary);
+  box-shadow: 0 0 8px var(--glow-color);
 }
 
 .resize-handle-horizontal:hover,
 .resize-handle-horizontal:active {
-  background-color: var(--accent-color);
+  background-color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--glow-color);
 }
 
 .resize-handle-vertical {
   height: 4px;
   background-color: transparent;
   cursor: row-resize;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--transition-fast);
 }
 
 .resize-handle-vertical:hover,
 .resize-handle-vertical:active {
-  background-color: var(--accent-color);
+  background-color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--glow-color);
 }
 
 /* Placeholder content */
 .placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   padding: 20px;
   text-align: center;
   color: var(--text-secondary);
+}
+
+.placeholder-content p {
+  margin: 0;
 }
 
 .placeholder-content .muted {
@@ -128,7 +163,7 @@
   margin-top: 8px;
 }
 
-/* Welcome screen */
+/* Welcome screen - Flux branded */
 .welcome-screen {
   display: flex;
   flex-direction: column;
@@ -137,56 +172,91 @@
   height: 100%;
   padding: 40px;
   text-align: center;
+  background: radial-gradient(ellipse at center, var(--bg-tertiary) 0%, var(--bg-primary) 70%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grid pattern */
+.welcome-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .welcome-logo {
-  width: 80px;
-  height: 80px;
-  background-color: var(--accent-color);
-  color: white;
-  font-size: 48px;
-  font-weight: bold;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-xlarge);
+  margin-bottom: 28px;
+  box-shadow:
+    0 0 0 4px var(--bg-tertiary),
+    0 0 40px var(--glow-strong),
+    0 20px 50px rgba(0, 0, 0, 0.4);
+  animation: glow-pulse 3s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+  object-fit: contain;
 }
 
 .welcome-screen h1 {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 36px;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 8px;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-screen p {
   color: var(--text-secondary);
-  margin-bottom: 32px;
+  font-size: 15px;
+  margin-bottom: 36px;
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 48px;
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-button {
-  padding: 10px 24px;
+  padding: 12px 28px;
   font-size: 14px;
-  border-radius: 6px;
+  font-weight: 500;
+  border-radius: var(--radius-medium);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all var(--transition-normal);
   border: none;
 }
 
 .welcome-button:not(.secondary) {
-  background-color: var(--accent-color);
+  background: var(--gradient-primary);
   color: white;
+  box-shadow: 0 4px 20px var(--glow-color);
 }
 
 .welcome-button:not(.secondary):hover {
-  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--glow-strong);
+}
+
+.welcome-button:not(.secondary):active {
+  transform: translateY(0);
 }
 
 .welcome-button.secondary {
@@ -197,29 +267,35 @@
 
 .welcome-button.secondary:hover {
   background-color: var(--bg-hover);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px var(--glow-color);
 }
 
 .welcome-shortcuts {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   color: var(--text-secondary);
+  position: relative;
+  z-index: 1;
 }
 
 .shortcut {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 13px;
 }
 
 .shortcut kbd {
-  background-color: var(--bg-tertiary);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: var(--bg-tertiary);
+  padding: 4px 10px;
+  border-radius: var(--radius-small);
   font-family: var(--font-mono);
   font-size: 12px;
   border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  box-shadow: 0 2px 0 var(--border-color);
 }
 
 .shortcut span {
@@ -243,12 +319,12 @@
 
 /* Drag overlay for components */
 .drag-overlay-component {
-  padding: 8px 16px;
-  background: var(--accent-color);
+  padding: 10px 18px;
+  background: var(--gradient-primary);
   color: white;
-  border-radius: 6px;
+  border-radius: var(--radius-medium);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px var(--glow-color);
   pointer-events: none;
 }

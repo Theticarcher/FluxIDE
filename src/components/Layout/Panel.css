@@ -12,14 +12,13 @@
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  height: 35px;
+  height: 38px;
   flex-shrink: 0;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   padding: 0;
-  gap: 8px;
+  overflow: hidden;
 }
 
 .panel-tabs-wrapper {
@@ -27,58 +26,120 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--text-muted) transparent;
+  height: 100%;
+  /* Hide scrollbar completely - use scroll buttons or drag instead */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .panel-tabs-wrapper::-webkit-scrollbar {
-  height: 4px;
-}
-
-.panel-tabs-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.panel-tabs-wrapper::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
-  border-radius: 2px;
+  display: none;
 }
 
 .panel-tabs {
   display: flex;
   height: 100%;
   white-space: nowrap;
+  padding: 0 4px;
+  gap: 2px;
 }
 
 .panel-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px;
-  height: 100%;
+  padding: 0 10px;
+  height: calc(100% - 6px);
+  margin: 3px 0;
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s ease;
+  border-radius: var(--radius-small);
+  transition: all var(--transition-fast);
+  position: relative;
+  flex-shrink: 0;
 }
 
 .panel-tab:hover {
   color: var(--text-primary);
+  background-color: var(--bg-hover);
 }
 
 .panel-tab.active {
+  color: var(--accent-primary);
+  background-color: var(--bg-active);
+}
+
+/* Gradient underline for active tab */
+.panel-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: var(--gradient-primary);
+  border-radius: 1px;
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+/* Icon styling */
+.panel-tab svg {
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.panel-tab:hover svg,
+.panel-tab.active svg {
+  opacity: 1;
+}
+
+.panel-tab.active svg {
+  filter: drop-shadow(0 0 4px var(--glow-color));
+}
+
+/* Scroll buttons */
+.panel-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 100%;
+  flex-shrink: 0;
+  background-color: var(--bg-secondary);
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.panel-scroll-btn:hover {
+  background-color: var(--bg-hover);
   color: var(--text-primary);
-  border-bottom-color: var(--accent-color);
+}
+
+.panel-scroll-left {
+  border-right: 1px solid var(--border-color);
+}
+
+.panel-scroll-right {
+  border-left: 1px solid var(--border-color);
 }
 
 .panel-actions {
   display: flex;
-  gap: 2px;
+  gap: 4px;
   flex-shrink: 0;
-  padding-right: 8px;
+  padding: 0 8px;
+  height: 100%;
+  align-items: center;
+  background-color: var(--bg-secondary);
+  border-left: 1px solid var(--border-color);
 }
 
 .panel-action {
@@ -89,10 +150,10 @@
   height: 28px;
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  border-radius: var(--radius-small);
+  transition: all var(--transition-fast);
 }
 
 .panel-action:hover {
@@ -100,8 +161,13 @@
   color: var(--text-primary);
 }
 
+.panel-action:active {
+  background-color: var(--bg-active);
+}
+
 .panel-content {
   flex: 1;
   overflow: auto;
   min-height: 0;
+  background-color: var(--bg-primary);
 }

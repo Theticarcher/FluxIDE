@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Main gradient for 3D effect -->
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff79c6"/>
+      <stop offset="30%" style="stop-color:#bd93f9"/>
+      <stop offset="60%" style="stop-color:#8be9fd"/>
+      <stop offset="100%" style="stop-color:#50fa7b"/>
+    </linearGradient>
+    
+    <!-- Highlight gradient for 3D shine -->
+    <linearGradient id="highlightGradient" x1="0%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.5"/>
+      <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    
+    <!-- Outer glow filter -->
+    <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- 3D bevel effect -->
+    <filter id="bevel" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur"/>
+      <feSpecularLighting in="blur" surfaceScale="6" specularConstant="0.75" specularExponent="20" lighting-color="#ffffff" result="specOut">
+        <fePointLight x="-5000" y="-10000" z="20000"/>
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut"/>
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  </defs>
+  
+  <!-- Glow layer (behind) -->
+  <g opacity="0.6" filter="url(#outerGlow)">
+    <path d="
+      M 22 14
+      Q 16 14 16 22
+      L 16 106
+      Q 16 116 26 116
+      L 44 116
+      Q 52 116 52 106
+      L 52 74
+      L 80 74
+      Q 96 74 96 58
+      Q 96 44 80 44
+      L 52 44
+      L 52 34
+      L 96 34
+      Q 112 34 112 20
+      Q 112 14 96 14
+      Z
+    " fill="url(#mainGradient)"/>
+  </g>
+  
+  <!-- Main F shape with 3D effect -->
+  <g filter="url(#bevel)">
+    <!-- Base shape - balanced F -->
+    <path d="
+      M 22 14
+      Q 16 14 16 22
+      L 16 106
+      Q 16 116 26 116
+      L 44 116
+      Q 52 116 52 106
+      L 52 74
+      L 80 74
+      Q 96 74 96 58
+      Q 96 44 80 44
+      L 52 44
+      L 52 34
+      L 96 34
+      Q 112 34 112 20
+      Q 112 14 96 14
+      Z
+    " fill="url(#mainGradient)"/>
+    
+    <!-- 3D highlight overlay -->
+    <path d="
+      M 22 14
+      Q 16 14 16 22
+      L 16 106
+      Q 16 116 26 116
+      L 44 116
+      Q 52 116 52 106
+      L 52 74
+      L 80 74
+      Q 96 74 96 58
+      Q 96 44 80 44
+      L 52 44
+      L 52 34
+      L 96 34
+      Q 112 34 112 20
+      Q 112 14 96 14
+      Z
+    " fill="url(#highlightGradient)"/>
+  </g>
+  
+  <!-- Top edge highlight -->
+  <path d="
+    M 22 14
+    Q 16 14 16 22
+    L 16 34
+    L 52 34
+    L 96 34
+    Q 112 34 112 20
+    Q 112 14 96 14
+    Z
+  " fill="url(#highlightGradient)" opacity="0.3"/>
+</svg>

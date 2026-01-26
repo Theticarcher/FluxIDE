@@ -44,6 +44,8 @@ import {
   FluxScoreTab,
   RecorderTab,
 } from "./components/DevTools/tabs";
+import { ThemeProvider } from "./components/ThemeProvider";
+import { SettingsModal } from "./components/Settings";
 import { useEditorStore } from "./stores/editor-store";
 import { useFileStore } from "./stores/file-store";
 import { useVisualEditorStore, generateNodeId } from "./stores/visual-editor-store";
@@ -65,6 +67,7 @@ function App() {
   const [compiledCss, setCompiledCss] = useState<string | null>(null);
   const [compiledJs, setCompiledJs] = useState<string | null>(null);
   const [activeDragItem, setActiveDragItem] = useState<ComponentDefinition | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Ref for preview iframe - shared between Preview and DevTools tabs
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
@@ -473,6 +476,7 @@ function App() {
   };
 
   return (
+    <ThemeProvider>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
@@ -481,7 +485,11 @@ function App() {
     >
     <div className="app-container">
       <div className="app-main">
-        <ActivityBar activeView={activeView} onViewChange={handleViewChange} />
+        <ActivityBar
+          activeView={activeView}
+          onViewChange={handleViewChange}
+          onSettingsClick={() => setIsSettingsOpen(true)}
+        />
 
         <PanelGroup direction="horizontal" className="main-panel-group">
           {isSidebarVisible && (
@@ -533,7 +541,7 @@ function App() {
                         />
                       ) : (
                         <div className="welcome-screen">
-                          <div className="welcome-logo">F</div>
+                          <img src="/flux-icon.svg" alt="FluxIDE" className="welcome-logo" />
                           <h1>FluxIDE</h1>
                           <p>A standalone IDE for the Flux programming language</p>
                           <div className="welcome-shortcuts">
@@ -710,6 +718,12 @@ function App() {
       )}
     </DragOverlay>
     </DndContext>
+
+    <SettingsModal
+      isOpen={isSettingsOpen}
+      onClose={() => setIsSettingsOpen(false)}
+    />
+    </ThemeProvider>
   );
 }
 

@@ -1,7 +1,9 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useRef, useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   X,
   Terminal,
   AlertCircle,
@@ -63,10 +65,70 @@ export function Panel({
   onToggleCollapse,
   children,
 }: PanelProps) {
+  const tabsWrapperRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    const wrapper = tabsWrapperRef.current;
+    if (wrapper) {
+      setCanScrollLeft(wrapper.scrollLeft > 0);
+      setCanScrollRight(
+        wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 1
+      );
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const wrapper = tabsWrapperRef.current;
+    if (wrapper) {
+      wrapper.addEventListener("scroll", checkScroll);
+      window.addEventListener("resize", checkScroll);
+
+      // Handle mouse wheel scrolling horizontally
+      const handleWheel = (e: WheelEvent) => {
+        if (wrapper.scrollWidth > wrapper.clientWidth) {
+          e.preventDefault();
+          wrapper.scrollLeft += e.deltaY;
+          checkScroll();
+        }
+      };
+
+      wrapper.addEventListener("wheel", handleWheel, { passive: false });
+
+      return () => {
+        wrapper.removeEventListener("scroll", checkScroll);
+        window.removeEventListener("resize", checkScroll);
+        wrapper.removeEventListener("wheel", handleWheel);
+      };
+    }
+  }, []);
+
+  const scrollTabs = (direction: "left" | "right") => {
+    const wrapper = tabsWrapperRef.current;
+    if (wrapper) {
+      const scrollAmount = 150;
+      wrapper.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className={`panel ${isCollapsed ? "collapsed" : ""}`}>
       <div className="panel-header">
-        <div className="panel-tabs-wrapper">
+        {canScrollLeft && (
+          <button
+            className="panel-scroll-btn panel-scroll-left"
+            onClick={() => scrollTabs("left")}
+            title="Scroll left"
+          >
+            <ChevronLeft size={16} />
+          </button>
+        )}
+        <div className="panel-tabs-wrapper" ref={tabsWrapperRef}>
           <div className="panel-tabs">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
@@ -80,6 +142,15 @@ export function Panel({
             ))}
           </div>
         </div>
+        {canScrollRight && (
+          <button
+            className="panel-scroll-btn panel-scroll-right"
+            onClick={() => scrollTabs("right")}
+            title="Scroll right"
+          >
+            <ChevronRight size={16} />
+          </button>
+        )}
         <div className="panel-actions">
           <button
             className="panel-action"

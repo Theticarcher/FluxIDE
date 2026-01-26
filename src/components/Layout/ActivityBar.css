@@ -3,44 +3,164 @@
   flex-direction: column;
   justify-content: space-between;
   width: var(--activity-bar-width);
-  background-color: var(--bg-secondary);
+  background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
   border-right: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle vertical accent line on the right edge */
+.activity-bar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, var(--accent-primary) 50%, transparent 100%);
+  opacity: 0.5;
 }
 
 .activity-bar-top,
 .activity-bar-bottom {
   display: flex;
   flex-direction: column;
+  padding: 8px 6px;
+  gap: 6px;
 }
 
 .activity-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--activity-bar-width);
-  height: var(--activity-bar-width);
-  background: none;
-  border: none;
+  width: calc(var(--activity-bar-width) - 12px);
+  height: calc(var(--activity-bar-width) - 12px);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-large);
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   position: relative;
-  transition: color 0.15s ease;
+  transition: all var(--transition-normal);
 }
 
 .activity-item:hover {
   color: var(--text-primary);
+  background: linear-gradient(135deg, var(--bg-hover) 0%, transparent 100%);
+  border-color: var(--border-subtle);
+  transform: scale(1.05);
 }
 
 .activity-item.active {
-  color: var(--text-primary);
+  color: var(--accent-primary);
+  background: linear-gradient(135deg, var(--bg-active) 0%, rgba(124, 77, 255, 0.1) 100%);
+  border-color: var(--accent-primary);
+  box-shadow:
+    0 0 20px var(--glow-color),
+    inset 0 0 10px rgba(124, 77, 255, 0.1);
 }
 
+/* Glowing corner accent for active item - unique diamond shape */
 .activity-item.active::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background-color: var(--accent-color);
+  left: -1px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--gradient-primary);
+  box-shadow: 0 0 12px var(--glow-color);
+  z-index: 1;
+}
+
+/* Secondary glow pulse on active */
+.activity-item.active::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-large);
+  background: var(--gradient-primary);
+  opacity: 0;
+  z-index: -1;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(1.02);
+  }
+}
+
+/* Icon glow on active */
+.activity-item.active svg {
+  filter: drop-shadow(0 0 8px var(--glow-color));
+}
+
+/* Floating tooltip with arrow */
+.activity-item[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: var(--radius-medium);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow:
+    var(--shadow-large),
+    0 0 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  animation: tooltip-appear 0.2s ease;
+}
+
+/* Tooltip arrow */
+.activity-item[title]:hover::before {
+  left: calc(100% + 8px);
+  width: 0;
+  height: 0;
+  background: transparent;
+  border: 6px solid transparent;
+  border-right-color: var(--bg-tertiary);
+  box-shadow: none;
+  transform: translateY(-50%);
+}
+
+.activity-item.active[title]:hover::before {
+  border-right-color: var(--bg-tertiary);
+}
+
+@keyframes tooltip-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Settings icon special styling */
+.activity-bar-bottom .activity-item:hover svg {
+  animation: settings-rotate 0.5s ease;
+}
+
+@keyframes settings-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(90deg);
+  }
 }

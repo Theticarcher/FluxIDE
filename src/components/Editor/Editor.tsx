@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback } from "react";
 import MonacoEditor, { useMonaco, type OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { registerFluxLanguage, detectLanguage } from "./monaco-flux";
+import { useThemeStore } from "../../stores/theme-store";
+import { themes, themeNames } from "../../themes";
 import "./Editor.css";
 
 interface EditorProps {
@@ -15,17 +17,42 @@ export function Editor({ filePath, content, onChange, onSave }: EditorProps) {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof monaco | null>(null);
   const languageRegistered = useRef(false);
+  const themesRegistered = useRef(false);
   const monacoInstance = useMonaco();
 
-  // Register Flux language and theme once Monaco is available
+  // Get theme settings from store
+  const {
+    themeName,
+    editorFontSize,
+    editorFontFamily,
+    editorLineHeight,
+    editorTabSize,
+    editorWordWrap,
+    editorMinimap,
+    editorFontLigatures,
+  } = useThemeStore();
+
+  // Register Flux language and all themes once Monaco is available
   useEffect(() => {
     if (monacoInstance && !languageRegistered.current) {
       registerFluxLanguage(monacoInstance);
-      // Set the dark theme as default for all languages
-      monacoInstance.editor.setTheme("flux-dark");
       languageRegistered.current = true;
     }
-  }, [monacoInstance]);
+
+    // Register all themes from our theme system
+    if (monacoInstance && !themesRegistered.current) {
+      for (const name of themeNames) {
+        const theme = themes[name];
+        monacoInstance.editor.defineTheme(name, theme.monacoTheme);
+      }
+      themesRegistered.current = true;
+    }
+
+    // Set the current theme
+    if (monacoInstance && themesRegistered.current) {
+      monacoInstance.editor.setTheme(themeName);
+    }
+  }, [monacoInstance, themeName]);
 
   // Detect language from file path
   const language = detectLanguage(filePath);
@@ -36,18 +63,19 @@ export function Editor({ filePath, content, onChange, onSave }: EditorProps) {
       editorRef.current = editor;
       monacoRef.current = monaco;
 
-      // Configure editor options
+      // Configure editor options from theme store
       editor.updateOptions({
-        tabSize: 2,
+        tabSize: editorTabSize,
         insertSpaces: true,
         formatOnPaste: true,
         formatOnType: false,
-        wordWrap: "on",
-        minimap: { enabled: true },
+        wordWrap: editorWordWrap ? "on" : "off",
+        minimap: { enabled: editorMinimap },
         scrollBeyondLastLine: false,
-        fontSize: 14,
-        fontFamily: "'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace",
-        fontLigatures: true,
+        fontSize: editorFontSize,
+        fontFamily: editorFontFamily,
+        fontLigatures: editorFontLigatures,
+        lineHeight: editorFontSize * editorLineHeight,
         renderWhitespace: "selection",
         cursorBlinking: "smooth",
         cursorSmoothCaretAnimation: "on",
@@ -72,8 +100,23 @@ export function Editor({ filePath, content, onChange, onSave }: EditorProps) {
       // Focus the editor
       editor.focus();
     },
-    [onSave]
+    [onSave, editorFontSize, editorFontFamily, editorLineHeight, editorTabSize, editorWordWrap, editorMinimap, editorFontLigatures]
   );
+
+  // Update editor options when settings change
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.updateOptions({
+        fontSize: editorFontSize,
+        fontFamily: editorFontFamily,
+        fontLigatures: editorFontLigatures,
+        lineHeight: editorFontSize * editorLineHeight,
+        tabSize: editorTabSize,
+        wordWrap: editorWordWrap ? "on" : "off",
+        minimap: { enabled: editorMinimap },
+      });
+    }
+  }, [editorFontSize, editorFontFamily, editorLineHeight, editorTabSize, editorWordWrap, editorMinimap, editorFontLigatures]);
 
   // Handle content changes
   const handleEditorChange = useCallback(
@@ -91,7 +134,7 @@ export function Editor({ filePath, content, onChange, onSave }: EditorProps) {
         height="100%"
         language={language}
         value={content}
-        theme="flux-dark"
+        theme={themeName}
         onChange={handleEditorChange}
         onMount={handleEditorDidMount}
         loading={<div className="editor-loading">Loading editor...</div>}

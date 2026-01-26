@@ -1,0 +1,151 @@
+import type { FluxTheme } from "./types";
+
+export const neonNightsTheme: FluxTheme = {
+  name: "neon-nights",
+  displayName: "Neon Nights",
+  type: "dark",
+
+  cssVariables: {
+    // Background hierarchy - Pure black with neon accents
+    bgPrimary: "#000000",
+    bgSecondary: "#0a0a0a",
+    bgTertiary: "#141414",
+    bgHover: "#1f1f1f",
+    bgActive: "#2a2a2a",
+    bgOverlay: "rgba(0, 0, 0, 0.95)",
+
+    // Text hierarchy
+    textPrimary: "#ffffff",
+    textSecondary: "#b0b0b0",
+    textMuted: "#707070",
+    textInverse: "#000000",
+
+    // Primary accent - Hot Pink
+    accentPrimary: "#ff0080",
+    accentHover: "#ff40a0",
+    accentActive: "#cc0066",
+    accentMuted: "#4d0026",
+
+    // Secondary accent - Electric Blue
+    accentSecondary: "#00ffff",
+    accentSecondaryHover: "#40ffff",
+
+    // Semantic colors
+    errorColor: "#ff3366",
+    warningColor: "#ffcc00",
+    successColor: "#00ff88",
+    infoColor: "#00aaff",
+
+    // Borders & dividers
+    borderColor: "#333333",
+    borderHover: "#ff008040",
+    borderFocus: "#ff0080",
+
+    // Special effects - Strong neon glow
+    glowColor: "rgba(255, 0, 128, 0.5)",
+    glowStrong: "rgba(255, 0, 128, 0.8)",
+    gradientPrimary: "linear-gradient(135deg, #ff0080 0%, #00ffff 100%)",
+    gradientSecondary: "linear-gradient(135deg, #141414 0%, #000000 100%)",
+    gradientAccent: "linear-gradient(90deg, #ff0080, #00ffff, #ff0080)",
+
+    // Shadows - with color
+    shadowSmall: "0 2px 8px rgba(255, 0, 128, 0.2)",
+    shadowMedium: "0 4px 16px rgba(255, 0, 128, 0.3)",
+    shadowLarge: "0 8px 32px rgba(255, 0, 128, 0.4)",
+
+    // Border radius
+    radiusSmall: "6px",
+    radiusMedium: "10px",
+    radiusLarge: "14px",
+    radiusXLarge: "20px",
+  },
+
+  monacoTheme: {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "keyword", foreground: "ff0080", fontStyle: "bold" },
+      { token: "keyword.control", foreground: "ff0080" },
+      { token: "keyword.operator", foreground: "00ffff" },
+      { token: "type", foreground: "00ffff" },
+      { token: "type.identifier", foreground: "00ffff" },
+      { token: "class", foreground: "00ffff" },
+      { token: "variable", foreground: "ffffff" },
+      { token: "variable.predefined", foreground: "ff40a0" },
+      { token: "variable.parameter", foreground: "ffcc00" },
+      { token: "identifier", foreground: "ffffff" },
+      { token: "function", foreground: "00ff88" },
+      { token: "function.declaration", foreground: "00ff88" },
+      { token: "string", foreground: "ffcc00" },
+      { token: "string.escape", foreground: "ff3366" },
+      { token: "number", foreground: "ff3366" },
+      { token: "comment", foreground: "707070", fontStyle: "italic" },
+      { token: "operator", foreground: "00ffff" },
+      { token: "delimiter", foreground: "b0b0b0" },
+      { token: "delimiter.bracket", foreground: "ff0080" },
+      { token: "tag", foreground: "ff3366" },
+      { token: "attribute.name", foreground: "ff40a0" },
+      { token: "attribute.value", foreground: "ffcc00" },
+    ],
+    colors: {
+      "editor.background": "#000000",
+      "editor.foreground": "#ffffff",
+      "editorCursor.foreground": "#ff0080",
+      "editor.selectionBackground": "#ff008040",
+      "editor.inactiveSelectionBackground": "#ff008020",
+      "editor.selectionHighlightBackground": "#00ffff20",
+      "editorLineNumber.foreground": "#707070",
+      "editorLineNumber.activeForeground": "#ff0080",
+      "editor.lineHighlightBackground": "#14141480",
+      "editorIndentGuide.background": "#333333",
+      "editorIndentGuide.activeBackground": "#ff008060",
+      "editorBracketMatch.background": "#ff008030",
+      "editorBracketMatch.border": "#ff0080",
+      "editorBracketHighlight.foreground1": "#ff0080",
+      "editorBracketHighlight.foreground2": "#00ffff",
+      "editorBracketHighlight.foreground3": "#ffcc00",
+      "editorBracketHighlight.foreground4": "#00ff88",
+      "scrollbarSlider.background": "#ff008030",
+      "scrollbarSlider.hoverBackground": "#ff008050",
+      "scrollbarSlider.activeBackground": "#ff008070",
+      "editorWidget.background": "#0a0a0a",
+      "editorWidget.border": "#ff008040",
+      "editorSuggestWidget.selectedBackground": "#ff008040",
+      "editorSuggestWidget.highlightForeground": "#00ffff",
+      "editorError.foreground": "#ff3366",
+      "editorWarning.foreground": "#ffcc00",
+      "input.background": "#141414",
+      "input.border": "#333333",
+      "inputOption.activeBorder": "#ff0080",
+      "dropdown.background": "#0a0a0a",
+      "dropdown.border": "#333333",
+      "list.activeSelectionBackground": "#ff008040",
+      "list.hoverBackground": "#1f1f1f40",
+    },
+  },
+
+  terminalTheme: {
+    background: "#000000",
+    foreground: "#ffffff",
+    cursor: "#ff0080",
+    cursorAccent: "#000000",
+    selectionBackground: "#ff008040",
+    selectionForeground: "#ffffff",
+    black: "#000000",
+    red: "#ff3366",
+    green: "#00ff88",
+    yellow: "#ffcc00",
+    blue: "#00aaff",
+    magenta: "#ff0080",
+    cyan: "#00ffff",
+    white: "#ffffff",
+    brightBlack: "#707070",
+    brightRed: "#ff6699",
+    brightGreen: "#66ffaa",
+    brightYellow: "#ffdd66",
+    brightBlue: "#66ccff",
+    brightMagenta: "#ff66b3",
+    brightCyan: "#66ffff",
+    brightWhite: "#ffffff",
+  },
+};

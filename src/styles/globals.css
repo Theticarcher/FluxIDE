@@ -1,36 +1,130 @@
 :root {
-  /* Colors */
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #252526;
-  --bg-tertiary: #2d2d2d;
-  --bg-hover: #3c3c3c;
-  --bg-active: #094771;
+  /* Background hierarchy - Flux Dark (default) */
+  --bg-primary: #0d0d14;
+  --bg-secondary: #13131d;
+  --bg-tertiary: #1a1a28;
+  --bg-hover: #252538;
+  --bg-active: #2d2d48;
+  --bg-overlay: rgba(13, 13, 20, 0.95);
 
-  --text-primary: #cccccc;
-  --text-secondary: #858585;
-  --text-muted: #6e6e6e;
+  /* Text hierarchy */
+  --text-primary: #e8e8f0;
+  --text-secondary: #9090a8;
+  --text-muted: #606078;
+  --text-inverse: #0d0d14;
 
-  --border-color: #3c3c3c;
-  --accent-color: #007acc;
-  --accent-hover: #1c8cdc;
+  /* Primary accent - Electric Violet */
+  --accent-primary: #7c4dff;
+  --accent-hover: #9d7aff;
+  --accent-active: #6930ff;
+  --accent-muted: #4a2d99;
 
-  --error-color: #f14c4c;
-  --warning-color: #cca700;
-  --success-color: #89d185;
+  /* Secondary accent - Cyan Energy */
+  --accent-secondary: #00e5ff;
+  --accent-secondary-hover: #40efff;
+
+  /* Legacy accent alias (for compatibility) */
+  --accent-color: var(--accent-primary);
+
+  /* Semantic colors */
+  --error-color: #ff5c8a;
+  --warning-color: #ffb347;
+  --success-color: #4ade80;
+  --info-color: #60a5fa;
+
+  /* Borders & dividers */
+  --border-color: #2a2a40;
+  --border-hover: #3d3d5c;
+  --border-focus: #7c4dff;
+
+  /* Special effects - Flux distinctive features */
+  --glow-color: rgba(124, 77, 255, 0.4);
+  --glow-strong: rgba(124, 77, 255, 0.6);
+  --gradient-primary: linear-gradient(135deg, #7c4dff 0%, #00e5ff 100%);
+  --gradient-secondary: linear-gradient(135deg, #1a1a28 0%, #0d0d14 100%);
+  --gradient-accent: linear-gradient(90deg, #7c4dff, #00e5ff, #7c4dff);
+
+  /* Shadows */
+  --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-large: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Border radius - More rounded than VS Code */
+  --radius-small: 6px;
+  --radius-medium: 10px;
+  --radius-large: 14px;
+  --radius-xlarge: 20px;
 
   /* Sizing */
   --activity-bar-width: 48px;
   --sidebar-width: 250px;
-  --status-bar-height: 22px;
-  --tab-height: 35px;
+  --status-bar-height: 24px;
+  --tab-height: 36px;
   --panel-min-height: 100px;
 
   /* Fonts */
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  --font-mono: 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  --font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, monospace;
   --font-size: 13px;
+
+  /* Animation */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Animation keyframes */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--accent-primary), 0 0 15px var(--glow-color);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--accent-primary), 0 0 25px var(--glow-strong);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Global resets */
 * {
   box-sizing: border-box;
 }
@@ -50,9 +144,36 @@ body {
   background-color: var(--bg-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
-/* Scrollbar styling */
+/* Disable animations when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Class to disable animations programmatically */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Class to disable glow effects */
+body.no-glow-effects {
+  --glow-color: transparent;
+  --glow-strong: transparent;
+}
+
+/* Scrollbar styling - Flux themed */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -63,15 +184,33 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-hover);
-  border-radius: 5px;
+  background: var(--accent-primary);
+  background: linear-gradient(180deg, var(--accent-muted) 0%, var(--accent-primary) 50%, var(--accent-muted) 100%);
+  border-radius: var(--radius-small);
+  border: 2px solid var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--accent-hover);
 }
 
-/* Placeholder app styling */
+::-webkit-scrollbar-corner {
+  background: var(--bg-secondary);
+}
+
+/* Focus visible styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Selection styling */
+::selection {
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+/* Placeholder app styling (welcome screen) */
 .app {
   display: flex;
   flex-direction: column;
@@ -85,6 +224,10 @@ body {
   font-size: 2rem;
   font-weight: 600;
   color: var(--text-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .app p {
@@ -92,15 +235,49 @@ body {
 }
 
 .app button {
-  background: var(--accent-color);
+  background: var(--gradient-primary);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: var(--radius-medium);
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-small);
 }
 
 .app button:hover {
-  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px var(--glow-color), var(--shadow-medium);
+}
+
+.app button:active {
+  transform: translateY(0);
+}
+
+/* Utility classes for Flux effects */
+.flux-glow {
+  box-shadow: 0 0 0 2px var(--accent-primary), 0 0 20px var(--glow-color);
+}
+
+.flux-glow-strong {
+  box-shadow: 0 0 0 2px var(--accent-primary), 0 0 30px var(--glow-strong);
+}
+
+.flux-gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.flux-gradient-bg {
+  background: var(--gradient-primary);
+}
+
+.flux-gradient-border {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--bg-primary), var(--bg-primary)) padding-box,
+              var(--gradient-primary) border-box;
 }

@@ -13,6 +13,7 @@ export type ActivityView = "explorer" | "search" | "git" | "run";
 interface ActivityBarProps {
   activeView: ActivityView;
   onViewChange: (view: ActivityView) => void;
+  onSettingsClick?: () => void;
 }
 
 interface ActivityItem {
@@ -28,7 +29,7 @@ const activities: ActivityItem[] = [
   { id: "run", icon: Play, title: "Run and Debug" },
 ];
 
-export function ActivityBar({ activeView, onViewChange }: ActivityBarProps) {
+export function ActivityBar({ activeView, onViewChange, onSettingsClick }: ActivityBarProps) {
   return (
     <div className="activity-bar">
       <div className="activity-bar-top">
@@ -44,7 +45,11 @@ export function ActivityBar({ activeView, onViewChange }: ActivityBarProps) {
         ))}
       </div>
       <div className="activity-bar-bottom">
-        <button className="activity-item" title="Settings">
+        <button
+          className="activity-item"
+          title="Settings"
+          onClick={onSettingsClick}
+        >
           <Settings size={24} />
         </button>
       </div>

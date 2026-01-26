@@ -5,6 +5,7 @@ import { WebLinksAddon } from "xterm-addon-web-links";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { useTerminalStore } from "../../stores/terminal-store";
+import { useThemeStore } from "../../stores/theme-store";
 import "xterm/css/xterm.css";
 import "./Terminal.css";
 
@@ -25,42 +26,47 @@ export function Terminal({ sessionId, isActive }: TerminalProps) {
   const initializedRef = useRef(false);
   const cleanedUpRef = useRef(false);
 
+  // Get theme settings from store
+  const { currentTheme, terminalFontSize, terminalFontFamily } = useThemeStore();
+
   // Initialize the terminal - only once
   useEffect(() => {
     if (!terminalRef.current || initializedRef.current) return;
     initializedRef.current = true;
     cleanedUpRef.current = false;
 
+    const terminalTheme = currentTheme.terminalTheme;
+
     const xterm = new XTerm({
       cursorBlink: true,
       cursorStyle: "block",
-      fontSize: 13,
-      fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
+      fontSize: terminalFontSize,
+      fontFamily: terminalFontFamily,
       lineHeight: 1.1,
       letterSpacing: 0,
       theme: {
-        background: "#1e1e1e",
-        foreground: "#cccccc",
-        cursor: "#cccccc",
-        cursorAccent: "#1e1e1e",
-        selectionBackground: "#264f78",
-        selectionForeground: "#ffffff",
-        black: "#000000",
-        red: "#cd3131",
-        green: "#0dbc79",
-        yellow: "#e5e510",
-        blue: "#2472c8",
-        magenta: "#bc3fbc",
-        cyan: "#11a8cd",
-        white: "#e5e5e5",
-        brightBlack: "#666666",
-        brightRed: "#f14c4c",
-        brightGreen: "#23d18b",
-        brightYellow: "#f5f543",
-        brightBlue: "#3b8eea",
-        brightMagenta: "#d670d6",
-        brightCyan: "#29b8db",
-        brightWhite: "#ffffff",
+        background: terminalTheme.background,
+        foreground: terminalTheme.foreground,
+        cursor: terminalTheme.cursor,
+        cursorAccent: terminalTheme.cursorAccent,
+        selectionBackground: terminalTheme.selectionBackground,
+        selectionForeground: terminalTheme.selectionForeground,
+        black: terminalTheme.black,
+        red: terminalTheme.red,
+        green: terminalTheme.green,
+        yellow: terminalTheme.yellow,
+        blue: terminalTheme.blue,
+        magenta: terminalTheme.magenta,
+        cyan: terminalTheme.cyan,
+        white: terminalTheme.white,
+        brightBlack: terminalTheme.brightBlack,
+        brightRed: terminalTheme.brightRed,
+        brightGreen: terminalTheme.brightGreen,
+        brightYellow: terminalTheme.brightYellow,
+        brightBlue: terminalTheme.brightBlue,
+        brightMagenta: terminalTheme.brightMagenta,
+        brightCyan: terminalTheme.brightCyan,
+        brightWhite: terminalTheme.brightWhite,
       },
       allowTransparency: false,
       scrollback: 10000,
@@ -154,6 +160,50 @@ export function Terminal({ sessionId, isActive }: TerminalProps) {
       fitAddonRef.current = null;
     };
   }, [sessionId]);
+
+  // Update terminal theme and font when settings change
+  useEffect(() => {
+    if (!xtermRef.current) return;
+
+    const terminalTheme = currentTheme.terminalTheme;
+
+    xtermRef.current.options.theme = {
+      background: terminalTheme.background,
+      foreground: terminalTheme.foreground,
+      cursor: terminalTheme.cursor,
+      cursorAccent: terminalTheme.cursorAccent,
+      selectionBackground: terminalTheme.selectionBackground,
+      selectionForeground: terminalTheme.selectionForeground,
+      black: terminalTheme.black,
+      red: terminalTheme.red,
+      green: terminalTheme.green,
+      yellow: terminalTheme.yellow,
+      blue: terminalTheme.blue,
+      magenta: terminalTheme.magenta,
+      cyan: terminalTheme.cyan,
+      white: terminalTheme.white,
+      brightBlack: terminalTheme.brightBlack,
+      brightRed: terminalTheme.brightRed,
+      brightGreen: terminalTheme.brightGreen,
+      brightYellow: terminalTheme.brightYellow,
+      brightBlue: terminalTheme.brightBlue,
+      brightMagenta: terminalTheme.brightMagenta,
+      brightCyan: terminalTheme.brightCyan,
+      brightWhite: terminalTheme.brightWhite,
+    };
+
+    xtermRef.current.options.fontSize = terminalFontSize;
+    xtermRef.current.options.fontFamily = terminalFontFamily;
+
+    // Refit after font changes
+    if (fitAddonRef.current) {
+      try {
+        fitAddonRef.current.fit();
+      } catch {
+        // Ignore fit errors
+      }
+    }
+  }, [currentTheme, terminalFontSize, terminalFontFamily]);
 
   // Handle resize when visibility changes or container size changes
   const handleResize = useCallback(() => {

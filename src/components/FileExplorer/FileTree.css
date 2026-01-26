@@ -2,37 +2,83 @@
   flex: 1;
   overflow-y: auto;
   user-select: none;
+  padding: 6px 4px;
+}
+
+/* Custom scrollbar */
+.file-tree::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-tree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-tree::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.file-tree::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
 }
 
 .file-tree-item {
   display: flex;
   align-items: center;
-  height: 22px;
-  padding-right: 8px;
+  height: 26px;
+  padding: 0 8px;
+  margin: 2px 4px;
   cursor: pointer;
-  transition: background-color 0.1s ease;
+  border-radius: var(--radius-small);
+  transition: all var(--transition-fast);
+  position: relative;
+  border: 1px solid transparent;
 }
 
 .file-tree-item:hover {
-  background-color: var(--bg-hover);
+  background: linear-gradient(90deg, var(--bg-hover) 0%, transparent 100%);
+  border-color: var(--border-subtle);
 }
 
 .file-tree-item.active {
-  background-color: var(--bg-active);
+  background: linear-gradient(90deg, var(--bg-active) 0%, rgba(124, 77, 255, 0.08) 100%);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px var(--glow-color);
+}
+
+/* Glowing line indicator for active item */
+.file-tree-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--gradient-primary);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--glow-color);
 }
 
 .expand-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  color: var(--text-secondary);
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
   flex-shrink: 0;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-small);
+}
+
+.file-tree-item:hover .expand-icon {
+  color: var(--accent-secondary);
+  background: rgba(0, 229, 255, 0.1);
 }
 
 .expand-icon-spacer {
-  width: 16px;
+  width: 18px;
   flex-shrink: 0;
 }
 
@@ -40,18 +86,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
   flex-shrink: 0;
+  transition: all var(--transition-fast);
 }
 
+/* Folder icon with gradient */
 .file-tree-item.directory .file-icon {
-  color: #dcb67a;
+  color: var(--accent-warning);
+  filter: drop-shadow(0 0 4px rgba(220, 182, 122, 0.3));
 }
 
+.file-tree-item.directory:hover .file-icon {
+  color: #f0c674;
+  transform: scale(1.1);
+}
+
+/* File icon styling based on type */
 .file-tree-item.file .file-icon {
   color: var(--text-secondary);
+}
+
+.file-tree-item.file:hover .file-icon {
+  color: var(--accent-primary);
+}
+
+.file-tree-item.active .file-icon {
+  filter: drop-shadow(0 0 6px var(--glow-color));
 }
 
 .file-name {
@@ -61,4 +124,94 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color var(--transition-fast);
+}
+
+.file-tree-item:hover .file-name {
+  color: var(--text-primary);
+}
+
+.file-tree-item.active .file-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Indent guides with subtle color */
+.file-tree-item::after {
+  content: "";
+  position: absolute;
+  left: var(--indent-guide-left, -100px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-subtle);
+  opacity: 0;
+}
+
+/* File type color hints */
+.file-tree-item[data-ext="js"] .file-icon,
+.file-tree-item[data-ext="jsx"] .file-icon {
+  color: #f7df1e;
+}
+
+.file-tree-item[data-ext="ts"] .file-icon,
+.file-tree-item[data-ext="tsx"] .file-icon {
+  color: #3178c6;
+}
+
+.file-tree-item[data-ext="css"] .file-icon,
+.file-tree-item[data-ext="scss"] .file-icon {
+  color: #264de4;
+}
+
+.file-tree-item[data-ext="json"] .file-icon {
+  color: #cbcb41;
+}
+
+.file-tree-item[data-ext="md"] .file-icon {
+  color: #519aba;
+}
+
+.file-tree-item[data-ext="rs"] .file-icon {
+  color: #dea584;
+}
+
+.file-tree-item[data-ext="py"] .file-icon {
+  color: #3572a5;
+}
+
+/* Rename input styling */
+.file-rename-input {
+  flex: 1;
+  height: 20px;
+  padding: 2px 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-small);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+.file-rename-input:focus {
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 12px var(--glow-color);
+}
+
+.file-rename-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* New item styling */
+.file-tree-item.new-item {
+  background: linear-gradient(90deg, rgba(124, 77, 255, 0.1) 0%, transparent 100%);
+  border-color: var(--accent-primary);
+}
+
+.file-tree-item.new-item .file-icon {
+  color: var(--accent-primary);
+  opacity: 0.7;
 }
