@@ -88,7 +88,7 @@ sudo rpm -i FluxIDE-x.x.x-1.x86_64.rpm
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/fluxide.git
+git clone https://github.com/theticarcher/fluxide.git
 cd fluxide
 
 # Install dependencies
